@@ -1,9 +1,11 @@
 export default function listaReducer(lista, accion) {
   switch (accion.type) {
+    case "initial":
+      return accion.payload;
     case "agregar":
       return [
         {
-          id: accion.id,
+          id: accion._id,
           tarea: accion.tarea,
           done: false,
           prioridad: accion.prioridad,
@@ -11,12 +13,13 @@ export default function listaReducer(lista, accion) {
         ...lista,
       ];
     case "borrar":
-      return lista.filter((tarea) => tarea.id !== accion.id);
+      return lista.filter((tarea) => tarea._id !== accion._id);
     case "chequear":
+      console.log(accion)
       return lista
         .map((tarea) => {
-          if (tarea.id === accion.task.id) {
-            return accion.task;
+          if (tarea._id === accion.payload._id) {
+            return accion.payload;
           } else {
             return tarea;
           }

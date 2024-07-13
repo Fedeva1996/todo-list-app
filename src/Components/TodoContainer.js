@@ -2,13 +2,13 @@ import React, { useReducer, useContext, useEffect, useState } from "react";
 import { AuthContext } from "../contexts/AuthContexts";
 import { getTareas } from "../actions/TareasActions";
 import listReducer from "../reducers/listReducer";
-import Menu from "../Components/Menu";
-import TodoDoneList from "../Components/TodoDoneList";
+import TodoForm from "./TodoForm";
+import TodoList from "./TodoList";
 
-const Home = () => {
+const TodoContainer = () => {
   const context = useContext(AuthContext);
   //console.log("context", context);
-  const [nuevaLista, actualizarNuevaLista] = useState(false);
+  const [nuevaLista, actualizarNuevaLista] = useState(false)
   // TODO: hacer get de todas las tareas existentes del usuario.
   const [lista, dispatch] = useReducer(listReducer, []);
 
@@ -21,13 +21,22 @@ const Home = () => {
         type: "initial",
         payload: tasks,
       });
-      actualizarNuevaLista(false);
+      actualizarNuevaLista(false)
       //console.log("tasks", tasks);
       //console.log(lista)
     }
     fetchData();
   }, [nuevaLista]);
 
+  const handleAddTarea = (objetoTarea) => {
+    // console.log("objeto", objetoTarea)
+    // setLista([...lista, objetoTarea])
+    dispatch({
+      type: "agregar",
+      payload: objetoTarea,
+    });
+    actualizarNuevaLista(true)
+  };
   const borrarTarea = (id) => {
     // setLista(lista.filter((item) => item.id !== id));
     dispatch({
@@ -44,22 +53,19 @@ const Home = () => {
     });
   };
 
-  //console.log(lista);
   return (
-    <div className="flex min-h-screen w-screen flex-1 flex-col items-center">
-      <Menu />
-      <div className="mt-5 w-full max-w-xl rounded-lg bg-gray-900 p-6 dark:bg-gray-900">
-        <h1 className="text-2xl font-bold text-gray-50 dark:text-gray-50">
-          Todo done list
-        </h1>
-        <TodoDoneList
-          lista={lista}
-          borrarTarea={borrarTarea}
-          checkTarea={checkTarea}
-        />{" "}
-      </div>
+    <div className="w-full max-w-xl rounded-lg bg-gray-900 p-6 dark:bg-gray-900 mt-5">
+      <h1 className="text-2xl font-bold text-gray-50 dark:text-gray-50">
+        Todo list
+      </h1>
+      <TodoForm handleAddTarea={handleAddTarea} />
+      <TodoList
+        lista={lista}
+        borrarTarea={borrarTarea}
+        checkTarea={checkTarea}
+      />
     </div>
   );
 };
 
-export default Home;
+export default TodoContainer;

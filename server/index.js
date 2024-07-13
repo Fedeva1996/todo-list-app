@@ -6,7 +6,8 @@ const jwtConfig = require("./jwt.config");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const { Usuario } = require("./Models/usuario");
-
+const { Tarea } = require("./Models/tarea");
+const { Console } = require("console");
 const app = express();
 
 app.set("key", jwtConfig.clave);
@@ -21,8 +22,11 @@ var corsOptions = {
 };
 
 const verifyToken = (req, res, next) => {
-  //console.log(`header authorization`, req.headers);
-  const token = req.headers["authorization"];
+  console.log(`header authorization`, req.headers.authorization);
+  const authorization = req.headers.authorization;
+  const token = authorization && authorization.split(" ")[1];
+  console.log(`header authorization > token`, token);
+
   if (!token) {
     return res.status(401).json({ error: "No token sent" });
   }
@@ -39,9 +43,6 @@ const verifyToken = (req, res, next) => {
 };
 
 const uri = process.env.MONGODB_URI;
-const clientOptions = {
-  serverApi: { version: "1", strict: true, deprecationErrors: true },
-};
 
 mongoose
   .connect(uri)
@@ -80,6 +81,7 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const user = await Usuario.findOne({ email: req.body.email });
+    //console.log("user", user);
     if (!user) {
       return res
         .status(401)
@@ -88,7 +90,7 @@ app.post("/api/login", async (req, res) => {
 
     const passwordMatch = await bcrypt.compare(
       req.body.password,
-      user.password
+      user.password,
     );
     if (!passwordMatch) {
       return res
@@ -153,12 +155,40 @@ app.post("/autenticar", async (req, res) => {
   }
 });
 
-app.post("/tarea", verifyToken, (req, res) => {
+app.post("/tarea", verifyToken, async (req, res) => {
   console.log("Body de mi request", req.body);
-  if (req.body) {
-    res.send({ message: `"Recibimos tu tarea.", ${req.body.tarea}` });
+  const data = req.body;
+  if (data.name && data.userEmail) {
+    const newTarea = new Tarea({
+      name: data.name,
+      done: data.done,
+      userEmail: data.userEmail,
+    });
+
+    console.log("Tarea creada", newTarea);
+
+    try {
+      await newTarea.save();
+      console.log("Tarea guardada", newTarea);
+      res.send({ message: "Tarea guardada", data: newTarea });
+    } catch (e) {
+      console.log("Error al crear la tarea", e);
+      res.status(404).send({ message: `Error al crear la tarea` });
+    }
   } else {
-    res.send({ message: "No recibimos tu tarea" });
+    res.status(400).send({ message: "Datos incompletos para crear la tarea" });
+  }
+});
+
+app.get("/api/tareas", verifyToken, async (req, res) => {
+  try {
+    const tareas = await Tarea.find(req.query);
+    if (!tareas) {
+      return res.status(200).json({ error: "No hay tareas encontradas" });
+    }
+    res.status(200).json(tareas);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
